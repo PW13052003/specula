@@ -2,9 +2,13 @@ import json
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from .database import init_db, get_db, AuditRecordModel
 from evaluation_engine.evaluator import LocalEvaluationEngine
 from evaluation_engine.schemas import ClinicalAuditResult
+
+class EvaluationRequest(BaseModel):
+    conversation: list
 
 app = FastAPI(title="Specula API Gateway")
 
@@ -21,10 +25,10 @@ def on_startup():
     init_db()
 
 @app.post("/api/evaluate", response_model=ClinicalAuditResult)
-def run_evaluation_endpoint(conversation: list, db: Session = Depends(get_db)):
+def run_evaluation_endpoint(payload: EvaluationRequest, db: Session = Depends(get_db)):
     try:
         engine = LocalEvaluationEngine(model_name="llama3")
-        audit_record = engine.evaluate_interaction(conversation)
+        audit_record = engine.evaluate_interaction(payload.conversation)
         
         db_record = AuditRecordModel(
             passed_safety_gate=audit_record.passed_safety_gate,
@@ -33,7 +37,7 @@ def run_evaluation_endpoint(conversation: list, db: Session = Depends(get_db)):
             detected_medical_errors=json.dumps(audit_record.detected_medical_errors),
             severity_assessment_accuracy=audit_record.severity_assessment_accuracy,
             justification_summary=audit_record.justification_summary,
-            conversation_log=json.dumps(conversation)
+            conversation_log=json.dumps(payload.conversation)
         )
         
         db.add(db_record)
