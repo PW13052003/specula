@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from .database import init_db, get_db, AuditRecordModel
 from evaluation_engine.evaluator import LocalEvaluationEngine
 from evaluation_engine.schemas import ClinicalAuditResult
+from analytics.metrics import AnalyticsEngine
 
 class EvaluationRequest(BaseModel):
     conversation: list
@@ -49,3 +50,18 @@ def run_evaluation_endpoint(payload: EvaluationRequest, db: Session = Depends(ge
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/analytics/kpis")
+def get_analytics_kpis(db: Session = Depends(get_db)):
+    try:
+        analytics = AnalyticsEngine(db)
+        kpis = analytics.calculate_safety_kpis()
+        distributions = analytics.aggregate_error_distribution()
+        
+        return {
+            "kpis": kpis,
+            "distributions": distributions
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
