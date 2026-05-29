@@ -1,0 +1,28 @@
+# Python / Virtual Environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Databases & Analytics Logs (Local Storage)
+*.db
+*.sqlite
+*.sqlite3
+*.duckdb
+logs/
+
+# Frontend (Next.js & Node)
+node_modules/
+.next/
+out/
+build/
+.env.local
+.env.development.local
+.env.production.local
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
